@@ -1,0 +1,8 @@
+requests>=2.32.3
+python-dotenv>=1.0.1
+urllib3>=2.3.0
+pymongo>=4.11.1
+scikit-learn>=1.6.1
+pandas>=2.2.3
+joblib>=1.4.2
+python-dateutil>=2.9.0.post0

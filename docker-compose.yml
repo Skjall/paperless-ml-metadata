@@ -1,0 +1,37 @@
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: paperless-ml-mongodb
+    volumes:
+      - ./mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - paperless-ml-network
+    environment:
+      - MONGO_INITDB_DATABASE=paperless_ml
+
+  paperless-ml:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: paperless-ml
+    volumes:
+      - ./models:/app/models
+      - ./.env:/app/.env
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    networks:
+      - paperless-ml-network
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/
+      - MONGO_DB=paperless_ml
+      # Other environment variables are loaded from .env file
+
+networks:
+  paperless-ml-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local

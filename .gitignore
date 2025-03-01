@@ -1,0 +1,46 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environment
+venv/
+ENV/
+
+# Environment variables
+.env
+
+# Models directory (optional, you might want to version these)
+# models/
+
+# MongoDB data
+data/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+repomix-output.txt
+
+models
+mongodb_data
+.DS_Store
