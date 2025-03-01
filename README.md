@@ -6,6 +6,7 @@ A machine learning tool that learns from your document processing decisions to i
 
 - **Self-improving ML model**: The system learns from your corrections to make better predictions over time
 - **Focus on titles and dates**: Automatically predicts document titles and creation dates
+- **Recipient tagging**: Learns to identify which person a document is relevant for
 - **Revolving training approach**: After each run, the model is retrained with the new data
 - **MongoDB integration**: Stores all training decisions for continuous improvement
 - **Simple user interface**: Easily confirm or correct suggestions with a simple prompt
@@ -40,10 +41,13 @@ A machine learning tool that learns from your document processing decisions to i
    cp .env.example .env
    ```
 
-3. Edit the `.env` file with your credentials:
+3. Edit the `.env` file with your credentials and configuration:
    ```
    PAPERLESS_URL=http://your-paperless-instance:8000
    PAPERLESS_API_TOKEN=your_paperless_api_token_here
+
+   # Configure recipient tags - who are the documents for?
+   RECIPIENT_TAGS=Greg,Carol,Marcia,Jan,Cindy,Greg,Peter,Bobby,Alice
    ```
 
 4. Build and start the Docker containers:
@@ -173,12 +177,34 @@ If you're using Portainer, follow these steps:
 
 ### Machine Learning Implementation
 
-The system uses two separate machine learning models:
+The system uses three separate machine learning models:
 
 1. **Title Prediction Model**: A Random Forest Classifier trained on document content to predict appropriate titles
 2. **Date Prediction Model**: A Random Forest Classifier that identifies creation dates based on document content
+3. **Recipient Tag Model**: A Multi-Output Classifier that predicts which person(s) a document is relevant for
 
 For documents where the ML model isn't confident or doesn't have enough training data, the system uses regex pattern matching as a fallback to extract dates from the document content.
+
+### Recipient Tagging
+
+The recipient tagging system helps categorize documents by the person they're relevant to:
+
+1. **Configuration**: Define possible recipients in your `.env` file with the `RECIPIENT_TAGS` variable
+   ```
+   RECIPIENT_TAGS=Greg,Carol,Marcia,Jan,Cindy,Greg,Peter,Bobby,Alice
+   ```
+
+2. **Learning Process**: As you process documents, you'll be asked to identify which recipient(s) each document is for
+   - The system will present a numbered list of possible recipients
+   - You can select multiple recipients by entering comma-separated numbers
+   - Or accept the system's suggestions by pressing Enter
+   - Or specify "none" if the document isn't relevant to any recipient
+
+3. **Prediction Improvement**: Over time, the system learns patterns in document content to predict the correct recipient(s)
+
+4. **Tag Application**: Selected recipients will be added as tags to the document in Paperless, making them searchable and filterable
+
+This feature is particularly useful for family or business documents where different documents may be relevant to different people.
 
 ### Data Storage
 
