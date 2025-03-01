@@ -453,51 +453,69 @@ class PaperlessML:
             created_date: Document created date (YYYY-MM-DD)
             recipient_tags: List of recipient tag names
         """
-        # Sanitize content to remove invalid Unicode characters
+        # Sanitize all strings to remove invalid Unicode characters
         if content:
-            # Replace problematic characters with the Unicode replacement character
+            # First attempt to replace invalid characters
             content = content.encode("utf-8", errors="replace").decode("utf-8")
+
+            # Additionally remove surrogate characters with regex
+            import re
+
+            content = re.sub(r"[\ud800-\udfff]", "", content)
+
+        # Also sanitize the title and recipient tags
+        title = title.encode("utf-8", errors="replace").decode("utf-8")
+        recipient_tags = [
+            tag.encode("utf-8", errors="replace").decode("utf-8")
+            for tag in recipient_tags
+        ]
 
         # Create a document hash to avoid storing duplicate content
         content_hash = hashlib.md5(content.encode()).hexdigest()
 
-        # Check if this document already exists in the training data
-        existing = self.training_data.find_one({"doc_id": doc_id})
+        try:
+            # Check if this document already exists in the training data
+            existing = self.training_data.find_one({"doc_id": doc_id})
 
-        if existing:
-            # Update existing document
-            self.training_data.update_one(
-                {"doc_id": doc_id},
-                {
-                    "$set": {
+            if existing:
+                # Update existing document
+                self.training_data.update_one(
+                    {"doc_id": doc_id},
+                    {
+                        "$set": {
+                            "content": content,
+                            "content_hash": content_hash,
+                            "title": title,
+                            "created_date": created_date,
+                            "recipient_tags": recipient_tags,
+                            "updated_at": datetime.datetime.now(),
+                        }
+                    },
+                )
+                print(f"Updated training data for document {doc_id}")
+            else:
+                # Insert new document
+                self.training_data.insert_one(
+                    {
+                        "doc_id": doc_id,
                         "content": content,
                         "content_hash": content_hash,
                         "title": title,
                         "created_date": created_date,
                         "recipient_tags": recipient_tags,
+                        "created_at": datetime.datetime.now(),
                         "updated_at": datetime.datetime.now(),
                     }
-                },
-            )
-            print(f"Updated training data for document {doc_id}")
-        else:
-            # Insert new document
-            self.training_data.insert_one(
-                {
-                    "doc_id": doc_id,
-                    "content": content,
-                    "content_hash": content_hash,
-                    "title": title,
-                    "created_date": created_date,
-                    "recipient_tags": recipient_tags,
-                    "created_at": datetime.datetime.now(),
-                    "updated_at": datetime.datetime.now(),
-                }
-            )
-            print(f"Stored new training data for document {doc_id}")
+                )
+                print(f"Stored new training data for document {doc_id}")
 
-        # Train the models after each document update
-        self.train_models()
+            # Train the models after each document update
+            self.train_models()
+
+        except Exception as e:
+            print(f"Error storing training data: {e}")
+            print("Continuing without storing this document's data.")
+            # Don't re-raise the exception so processing can continue
 
     def train_models(self):
         """Train or retrain the ML models with collected data"""
@@ -636,6 +654,29 @@ class PaperlessML:
 
         if not results:
             return None
+
+        # Sanitize the document content right after fetching
+        if "content" in results[0]:
+            try:
+                # First attempt to replace invalid characters
+                results[0]["content"] = (
+                    results[0]["content"]
+                    .encode("utf-8", errors="replace")
+                    .decode("utf-8")
+                )
+
+                # Additionally remove surrogate characters with regex
+                import re
+
+                results[0]["content"] = re.sub(
+                    r"[\ud800-\udfff]", "", results[0]["content"]
+                )
+            except Exception as e:
+                print(f"Warning: Error sanitizing document content: {e}")
+                # If there's an error, replace the content with a placeholder
+                results[0][
+                    "content"
+                ] = "Content could not be processed due to encoding issues"
 
         return results[0]
 
